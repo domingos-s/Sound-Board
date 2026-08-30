@@ -1,0 +1,17 @@
+{
+  "name": "call-soundboard",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "android:add": "npx cap add android",
+    "android:sync": "npx cap sync android",
+    "android:open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "latest",
+    "@capacitor/core": "latest"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "latest"
+  }
+}

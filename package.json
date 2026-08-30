@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "android:add": "npx cap add android",
-    "android:sync": "npx cap sync android",
-    "android:open": "npx cap open android"
+    "build": "node build.mjs",
+    "android:add": "npm run build && npx cap add android",
+    "android:sync": "npm run build && npx cap sync android",
+    "android:open": "npm run android:sync && npx cap open android"
   },
   "dependencies": {
     "@capacitor/android": "latest",

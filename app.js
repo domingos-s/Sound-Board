@@ -1,7 +1,6 @@
 const grid = document.getElementById('sound-grid');
 const upload = document.getElementById('audio-upload');
 const masterVolume = document.getElementById('master-volume');
-const outputDevice = document.getElementById('output-device');
 const stopAllButton = document.getElementById('stop-all');
 const clearBoardButton = document.getElementById('clear-board');
 const addDemoButton = document.getElementById('add-demo');
@@ -9,13 +8,59 @@ const template = document.getElementById('sound-card-template');
 
 let sounds = [];
 const activeAudio = new Set();
+const DB_NAME = 'call-soundboard';
+const STORE = 'sounds';
+
+function openDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = () => request.result.createObjectStore(STORE, { keyPath: 'id' });
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function loadSavedSounds() {
+  try {
+    const db = await openDb();
+    const tx = db.transaction(STORE, 'readonly');
+    const request = tx.objectStore(STORE).getAll();
+    const rows = await new Promise((resolve, reject) => {
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    sounds = rows.map(row => ({ ...row, url: URL.createObjectURL(row.blob) }));
+    render();
+  } catch (err) {
+    console.warn('Could not restore saved sounds', err);
+    render();
+  }
+}
+
+async function saveSound(sound) {
+  const db = await openDb();
+  const tx = db.transaction(STORE, 'readwrite');
+  tx.objectStore(STORE).put({ id: sound.id, name: sound.name, volume: sound.volume ?? 1, blob: sound.blob });
+}
+
+async function deleteSound(id) {
+  const db = await openDb();
+  const tx = db.transaction(STORE, 'readwrite');
+  tx.objectStore(STORE).delete(id);
+}
+
+async function clearSavedSounds() {
+  const db = await openDb();
+  const tx = db.transaction(STORE, 'readwrite');
+  tx.objectStore(STORE).clear();
+}
 
 function render() {
   grid.innerHTML = '';
   if (!sounds.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-state';
-    empty.textContent = 'Add audio files to build your board.';
+    empty.textContent = 'Add audio files to build your board. Sounds are saved on this device.';
     grid.appendChild(empty);
     return;
   }
@@ -32,11 +77,15 @@ function render() {
     volume.value = sound.volume ?? 1;
 
     play.addEventListener('click', () => playSound(sound));
-    volume.addEventListener('input', e => sound.volume = Number(e.target.value));
-    remove.addEventListener('click', () => {
+    volume.addEventListener('change', async e => {
+      sound.volume = Number(e.target.value);
+      try { await saveSound(sound); } catch (err) { console.warn(err); }
+    });
+    remove.addEventListener('click', async () => {
       URL.revokeObjectURL(sound.url);
       sounds.splice(index, 1);
       render();
+      try { await deleteSound(sound.id); } catch (err) { console.warn(err); }
     });
 
     card.dataset.id = sound.id;
@@ -47,17 +96,17 @@ function render() {
 async function playSound(sound) {
   const audio = new Audio(sound.url);
   audio.volume = Math.min(1, (sound.volume ?? 1) * Number(masterVolume.value));
-
-  const sinkId = outputDevice.value;
-  if (sinkId && typeof audio.setSinkId === 'function') {
-    try { await audio.setSinkId(sinkId); } catch (err) { console.warn('Output device selection failed', err); }
-  }
-
   activeAudio.add(audio);
   const cleanup = () => activeAudio.delete(audio);
   audio.addEventListener('ended', cleanup, { once: true });
   audio.addEventListener('error', cleanup, { once: true });
-  try { await audio.play(); } catch (err) { cleanup(); console.error(err); }
+  try {
+    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+    await audio.play();
+  } catch (err) {
+    cleanup();
+    console.error(err);
+  }
 }
 
 function stopAll() {
@@ -66,59 +115,45 @@ function stopAll() {
     audio.currentTime = 0;
   });
   activeAudio.clear();
+  if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'none';
 }
 
-upload.addEventListener('change', event => {
+upload.addEventListener('change', async event => {
   const files = [...event.target.files];
   for (const file of files) {
-    sounds.push({
+    const sound = {
       id: crypto.randomUUID(),
       name: file.name.replace(/\.[^/.]+$/, ''),
+      blob: file,
       url: URL.createObjectURL(file),
       volume: 1
-    });
+    };
+    sounds.push(sound);
+    try { await saveSound(sound); } catch (err) { console.warn('Could not save sound', err); }
   }
   upload.value = '';
   render();
 });
 
 stopAllButton.addEventListener('click', stopAll);
-clearBoardButton.addEventListener('click', () => {
+clearBoardButton.addEventListener('click', async () => {
   stopAll();
   sounds.forEach(sound => URL.revokeObjectURL(sound.url));
   sounds = [];
   render();
+  try { await clearSavedSounds(); } catch (err) { console.warn(err); }
 });
 
-addDemoButton.addEventListener('click', () => {
-  const demoNames = ['Applause', 'Air Horn', 'Drum Hit', 'Sad Trombone'];
-  demoNames.forEach((name, i) => {
+addDemoButton.addEventListener('click', async () => {
+  const demoNames = ['Applause-ish', 'Air Horn-ish', 'Drum Hit', 'Sad Trombone-ish'];
+  for (let i = 0; i < demoNames.length; i++) {
     const blob = makeToneBlob(220 + i * 110, 0.32 + i * 0.08);
-    sounds.push({ id: crypto.randomUUID(), name, url: URL.createObjectURL(blob), volume: 0.7 });
-  });
+    const sound = { id: crypto.randomUUID(), name: demoNames[i], blob, url: URL.createObjectURL(blob), volume: 0.7 };
+    sounds.push(sound);
+    try { await saveSound(sound); } catch (err) { console.warn(err); }
+  }
   render();
 });
-
-async function loadOutputs() {
-  outputDevice.innerHTML = '<option value="">Default output</option>';
-  if (!navigator.mediaDevices?.enumerateDevices) return;
-  try {
-    await navigator.mediaDevices.getUserMedia({ audio: true });
-  } catch (_) {
-    // Device labels may be hidden without permission; default output still works.
-  }
-  try {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    devices.filter(d => d.kind === 'audiooutput').forEach((device, i) => {
-      const option = document.createElement('option');
-      option.value = device.deviceId;
-      option.textContent = device.label || `Audio output ${i + 1}`;
-      outputDevice.appendChild(option);
-    });
-  } catch (err) {
-    console.warn('Could not enumerate audio devices', err);
-  }
-}
 
 function makeToneBlob(frequency, duration) {
   const sampleRate = 44100;
@@ -147,5 +182,8 @@ function makeToneBlob(frequency, duration) {
   return new Blob([buffer], { type: 'audio/wav' });
 }
 
-loadOutputs();
-render();
+if ('mediaSession' in navigator) {
+  navigator.mediaSession.metadata = new MediaMetadata({ title: 'Call Soundboard', artist: 'Sound Board' });
+}
+
+loadSavedSounds();

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Call Soundboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header>
+      <div>
+        <p class="eyebrow">CALL AUDIO TOOL</p>
+        <h1>Sound Board</h1>
+        <p class="subtitle">Play effects locally and route them into Zoom or Teams through a virtual audio device.</p>
+      </div>
+      <button id="stop-all" class="secondary">Stop all</button>
+    </header>
+
+    <section class="panel routing-panel">
+      <div>
+        <h2>Call routing</h2>
+        <p id="routing-status">Choose your speakers/headphones below. For the call, select a virtual audio cable as the microphone input.</p>
+      </div>
+      <label>
+        Output device
+        <select id="output-device"></select>
+      </label>
+      <label>
+        Master volume
+        <input id="master-volume" type="range" min="0" max="1" value="0.85" step="0.01" />
+      </label>
+    </section>
+
+    <section class="panel controls-panel">
+      <label class="upload-button">
+        <input id="audio-upload" type="file" accept="audio/*" multiple />
+        + Add sounds
+      </label>
+      <button id="add-demo" class="secondary">Add demo tones</button>
+      <button id="clear-board" class="danger">Clear board</button>
+    </section>
+
+    <section id="sound-grid" class="sound-grid" aria-live="polite"></section>
+
+    <section class="panel setup-panel">
+      <h2>Use it on Zoom / Teams</h2>
+      <ol>
+        <li>Install a virtual audio cable/loopback driver (for example VB-CABLE on Windows or BlackHole on macOS).</li>
+        <li>Configure your OS audio mixer so this page outputs to both your headphones/speakers and the virtual cable.</li>
+        <li>In Zoom or Teams, set the microphone/input device to that virtual cable.</li>
+        <li>If you also need your live microphone, combine your mic + soundboard in an OS mixer such as VoiceMeeter (Windows) or Audio MIDI Setup/Loopback-style mixer (macOS).</li>
+      </ol>
+      <p class="note">Browsers cannot directly create a system-wide virtual microphone. The page handles playback; the OS virtual audio device handles feeding that playback into the call.</p>
+    </section>
+  </main>
+
+  <template id="sound-card-template">
+    <article class="sound-card">
+      <button class="play-button" type="button">
+        <span class="icon">▶</span>
+        <span class="sound-name"></span>
+      </button>
+      <div class="card-controls">
+        <input class="volume" type="range" min="0" max="1" value="1" step="0.01" aria-label="Sound volume" />
+        <button class="remove-button" type="button" title="Remove sound">×</button>
+      </div>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>

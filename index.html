@@ -2,34 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1020" />
   <title>Call Soundboard</title>
+  <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <main class="app-shell">
     <header>
       <div>
-        <p class="eyebrow">CALL AUDIO TOOL</p>
+        <p class="eyebrow">MOBILE CALL SOUNDBOARD</p>
         <h1>Sound Board</h1>
-        <p class="subtitle">Play effects locally and route them into Zoom or Teams through a virtual audio device.</p>
+        <p class="subtitle">Built for Android. Share your call screen with device audio enabled, then tap a pad.</p>
       </div>
       <button id="stop-all" class="secondary">Stop all</button>
     </header>
 
-    <section class="panel routing-panel">
+    <section class="panel call-panel">
       <div>
-        <h2>Call routing</h2>
-        <p id="routing-status">Choose your speakers/headphones below. For the call, select a virtual audio cable as the microphone input.</p>
+        <h2>Use during a call</h2>
+        <p>In Zoom or Teams, start screen sharing and turn on <strong>device/share audio</strong>. Keep this soundboard visible while sharing, then play any effect below.</p>
       </div>
-      <label>
-        Output device
-        <select id="output-device"></select>
-      </label>
-      <label>
-        Master volume
-        <input id="master-volume" type="range" min="0" max="1" value="0.85" step="0.01" />
-      </label>
+      <div class="status-pill">Android-ready</div>
     </section>
 
     <section class="panel controls-panel">
@@ -37,21 +32,30 @@
         <input id="audio-upload" type="file" accept="audio/*" multiple />
         + Add sounds
       </label>
-      <button id="add-demo" class="secondary">Add demo tones</button>
+      <button id="add-demo" class="secondary">Add demo sounds</button>
       <button id="clear-board" class="danger">Clear board</button>
+    </section>
+
+    <section class="panel volume-panel">
+      <label>
+        Master volume
+        <input id="master-volume" type="range" min="0" max="1" value="0.9" step="0.01" />
+      </label>
     </section>
 
     <section id="sound-grid" class="sound-grid" aria-live="polite"></section>
 
-    <section class="panel setup-panel">
-      <h2>Use it on Zoom / Teams</h2>
-      <ol>
-        <li>Install a virtual audio cable/loopback driver (for example VB-CABLE on Windows or BlackHole on macOS).</li>
-        <li>Configure your OS audio mixer so this page outputs to both your headphones/speakers and the virtual cable.</li>
-        <li>In Zoom or Teams, set the microphone/input device to that virtual cable.</li>
-        <li>If you also need your live microphone, combine your mic + soundboard in an OS mixer such as VoiceMeeter (Windows) or Audio MIDI Setup/Loopback-style mixer (macOS).</li>
-      </ol>
-      <p class="note">Browsers cannot directly create a system-wide virtual microphone. The page handles playback; the OS virtual audio device handles feeding that playback into the call.</p>
+    <section class="panel help-panel">
+      <details>
+        <summary>Call setup</summary>
+        <ol>
+          <li>Join the Zoom or Teams call normally.</li>
+          <li>Choose <strong>Share screen</strong>.</li>
+          <li>Enable <strong>Share audio</strong> / <strong>Device audio</strong>.</li>
+          <li>Return to Sound Board and tap an effect.</li>
+        </ol>
+        <p class="note">Android does not let ordinary apps inject arbitrary audio directly into another app's microphone stream. Screen sharing with device audio is the supported mobile route.</p>
+      </details>
     </section>
   </main>
 

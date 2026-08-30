@@ -1,0 +1,8 @@
+{
+  "appId": "com.domingoss.callsoundboard",
+  "appName": "Call Soundboard",
+  "webDir": ".",
+  "server": {
+    "androidScheme": "https"
+  }
+}

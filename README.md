@@ -1,48 +1,51 @@
-# Call Sound Board
+# Call Soundboard
 
-A lightweight browser soundboard for playing sound effects during Zoom, Microsoft Teams, Google Meet, Discord, or other calls.
+A mobile-first Android soundboard for playing sound effects during Zoom or Microsoft Teams calls.
 
-## What it does
+## Mobile behavior
 
-- Load multiple local audio files into large sound pads.
-- Play overlapping effects.
-- Individual sound volume plus master volume.
-- Stop all currently playing sounds instantly.
-- Select a browser audio output device where supported.
-- Includes generated demo tones so the interface can be tested without committing copyrighted audio files.
+- Large two-column sound pads optimized for phones.
+- Add local audio files from the device.
+- Sounds persist locally using IndexedDB, so they remain after closing/reopening the app.
+- Per-sound volume, master volume, Stop All, and remove/clear controls.
+- Installable as a PWA or packageable as an Android APK through Capacitor.
 
-## Important: getting the sound into a call
+## Important: getting sound into Zoom / Teams
 
-A browser cannot create a system-wide virtual microphone by itself. To make both you **and the other people on the call** hear the soundboard, route its output into the conferencing app using a virtual audio device.
+Android does not allow an ordinary app to inject arbitrary playback directly into another app's microphone stream. The supported mobile route is screen sharing with device audio.
 
-### Windows
+1. Join your Zoom or Teams call normally.
+2. Start **Share screen**.
+3. Enable **Share audio** / **Device audio**.
+4. Return to Call Soundboard.
+5. Tap a sound pad. The soundboard audio is then part of the shared device audio stream.
 
-1. Install a virtual audio cable such as VB-CABLE.
-2. For the simplest sound-effects-only configuration, send the browser output to `CABLE Input` and select `CABLE Output` as the microphone in Zoom/Teams.
-3. To use your real microphone at the same time, use a mixer such as VoiceMeeter to combine:
-   - your physical microphone; and
-   - the soundboard/browser audio.
-4. Set the resulting VoiceMeeter/virtual output as the microphone in Zoom/Teams.
-5. Keep monitoring enabled to your headphones/speakers so you hear the effects too.
+Android's Audio Playback Capture framework allows system/media-projection components to capture eligible app media audio. The app is designed around that behavior rather than pretending to create a virtual microphone.
 
-### macOS
+## Run as a web app
 
-1. Install a loopback driver such as BlackHole.
-2. Use Audio MIDI Setup to create an appropriate Multi-Output/Aggregate device, or use another audio mixer.
-3. Route the browser into both your listening device and BlackHole.
-4. Select the BlackHole/aggregate input in Zoom/Teams.
-5. Combine your physical microphone with the soundboard if you need both simultaneously.
+The root files remain deployable directly with GitHub Pages.
 
-## Run locally
+## Build the Android app / APK
 
-This is a static site. Open `index.html` directly, or serve the directory with any basic static web server.
+Requirements: Node.js, Android Studio, and an Android SDK.
 
-For browser audio-output selection (`setSinkId`) and full device labels, Chromium-based browsers generally provide the best support. Some device APIs may require HTTPS or localhost.
+```bash
+npm install
+npm run android:add
+npm run android:open
+```
 
-## GitHub Pages
+The first command installs dependencies. `android:add` builds the web bundle and creates the native Android project. `android:open` syncs current web code and opens the Android project in Android Studio.
 
-The repository is structured as a static site and can be deployed directly with GitHub Pages from the `main` branch/root directory.
+From Android Studio, use **Build > Build Bundle(s) / APK(s) > Build APK(s)** to generate an installable APK.
+
+After the Android project has been created once, future web changes only require:
+
+```bash
+npm run android:open
+```
 
 ## Privacy
 
-Uploaded audio files remain local to the browser session. The app creates local object URLs and does not upload sound files to a server.
+Imported sound files are stored locally on the device. They are not uploaded by this application.
